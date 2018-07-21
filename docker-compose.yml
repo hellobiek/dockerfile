@@ -1,0 +1,110 @@
+version: '2'
+services:
+    prepare:
+        image: prepare:latest
+        hostname: prepare-host
+        container_name: prepare-container
+        networks:
+            - my-net
+        environment:
+            - "TZ=Asia/Shanghai"
+        depends_on:
+            - mysql
+        command: ["./wait-for-it.sh", "mysql-container:3306", "--", "/bin/bash", "/run/setup.sh"]
+    stock:
+        image: stock:latest
+        hostname: stock-host
+        container_name: stock-container
+        depends_on:
+            - gearmand
+            - redis
+            - mysql
+            - prepare
+        networks:
+            - my-net
+        environment:
+            - "TZ=Asia/Shanghai"
+        volumes:
+            - /Users/hellobiek/Documents/workspace/python/quant/smart_deal_tool:/code:cached
+            - /tmp:/tmp:cached
+            - /usr/local/var/stock/conf:/conf:cached
+            - /usr/local/var/stock/data:/data:cached
+            - /Users/hellobiek/Library/Application Support/CrossOver/Bottles/海通证券/drive_c/new_haitong:/tongdaxin:cached
+        tty: true
+        stdin_open: true
+        entrypoint: /bin/bash
+        #command: ["./wait-for-it.sh", "mysql-container:3306", "--", "python3", "/code/main.py"]
+    gearmand-worker:
+        image: gearmand-worker:latest
+        restart: always
+        environment:
+            - "TZ=Asia/Shanghai"
+        hostname: gearmand-worker-host
+        container_name: gearmand-worker-container
+        networks:
+            - my-net
+        depends_on:
+            - gearmand
+            - redis
+            - mysql
+        volumes:
+            - /Users/hellobiek/Documents/workspace/python/quant/smart_deal_tool:/code:cached
+            - /tmp:/tmp:cached
+        command: ["./wait-for-it.sh", "gearmand-container:4730", "--", "python3", "/code/worker.py"]
+    redis:
+        image: redis:latest
+        restart: always
+        hostname: redis-host
+        container_name: redis-container
+        ports:
+            - '6379:6379'
+        networks:
+            - my-net
+        environment:
+            - "TZ=Asia/Shanghai"
+        volumes:
+            - /usr/local/var/redis/data:/data:cached
+            - /usr/local/var/redis/conf:/conf:cached
+    mysql:
+        image: docker-mysql:latest
+        restart: always
+        hostname: mysql-host
+        container_name: mysql-container
+        cpu_shares: 100       #1核
+        mem_limit: 2147483648 #2GB
+        ports:
+            - '3306:3306' 
+        environment:
+            TZ: 'Asia/Shanghai'
+            MYSQL_USER: 'root'
+            MYSQL_PASS: 'pass'
+            MYSQL_ROOT_PASSWORD: '123456'
+        networks:
+            - my-net
+        volumes:
+            - /usr/local/var/mysql/conf:/etc/mysql:cached
+            - /usr/local/var/mysql/data:/var/lib/mysql
+        entrypoint: ['./wait-for-it.sh', 'redis-container:6379', '--', 'docker-entrypoint.sh']
+        command: ['mysqld']
+    gearmand:
+        image: gearmand:latest
+        restart: always
+        hostname: gearmand-host
+        container_name: gearmand-container
+        cpu_shares: 50       #0.5核
+        mem_limit: 536870912 #512MB
+        ports:
+            - '4730:4730'
+        networks:
+            - my-net
+        depends_on:
+            - redis
+        environment:
+            - "TZ=Asia/Shanghai"
+        volumes:
+            - /usr/local/var/gearman/conf:/conf:cached
+            - /tmp:/tmp:cached
+        command: ["./wait-for-it.sh", "redis-container:6379", "--", "gearmand", "--config-file", "/conf/gearmand.conf"]
+networks:
+    my-net:
+        driver: bridge

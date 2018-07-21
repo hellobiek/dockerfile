@@ -83,7 +83,7 @@ services:
             - my-net
         volumes:
             - /usr/local/var/mysql/conf:/etc/mysql:cached
-            - /usr/local/var/mysql/data:/var/lib/mysql
+            - /usr/local/var/mysql/data:/var/lib/mysql:cached
         entrypoint: ['./wait-for-it.sh', 'redis-container:6379', '--', 'docker-entrypoint.sh']
         command: ['mysqld']
     gearmand:

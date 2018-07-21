@@ -47,13 +47,13 @@ RUN apt-get    update && \
     python3-lxml \
     python3-wheel \
     python3-scipy \
-    python3-numpy \
     python3-gevent \
-    python3-pandas \
     python3-requests \
     python3-html5lib \
     python3-setuptools \
     python3-matplotlib
+
+RUN pip3 install pandas==0.23.3 
 
 RUN pip3 install protobuf leancloud SQLAlchemy mysqlclient beautifulsoup4 mysql-connector-python Pillow pytdx numexpr xlrd pyquery redis statsmodels sklearn easytrader
 

@@ -15,6 +15,8 @@ services:
         image: stock:latest
         hostname: stock-host
         container_name: stock-container
+        cpu_shares: 100       #1核
+        mem_limit: 1073741824  #512MB
         depends_on:
             - gearmand
             - redis
@@ -41,6 +43,8 @@ services:
             - "TZ=Asia/Shanghai"
         hostname: gearmand-worker-host
         container_name: gearmand-worker-container
+        cpu_shares: 30       #0.3核
+        mem_limit: 536870912 #512MB
         networks:
             - my-net
         depends_on:
@@ -56,6 +60,8 @@ services:
         restart: always
         hostname: redis-host
         container_name: redis-container
+        cpu_shares: 30        #0.3核
+        mem_limit: 1073741824 #1GB
         ports:
             - '6379:6379'
         networks:
@@ -91,7 +97,7 @@ services:
         restart: always
         hostname: gearmand-host
         container_name: gearmand-container
-        cpu_shares: 50       #0.5核
+        cpu_shares: 10       #0.1核
         mem_limit: 536870912 #512MB
         ports:
             - '4730:4730'
